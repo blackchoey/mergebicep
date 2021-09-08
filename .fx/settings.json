@@ -1,0 +1,30 @@
+{
+    "appName": "chyuan090801",
+    "projectId": "571a642c-d9c9-4d66-aea4-047548d7269c",
+    "solutionSettings": {
+        "name": "fx-solution-azure",
+        "version": "1.0.0",
+        "hostType": "Azure",
+        "capabilities": [
+            "Tab",
+            "Bot"
+        ],
+        "azureResources": [
+            "sql",
+            "function"
+        ],
+        "activeResourcePlugins": [
+            "fx-resource-frontend-hosting",
+            "fx-resource-identity",
+            "fx-resource-azure-sql",
+            "fx-resource-bot",
+            "fx-resource-aad-app-for-teams",
+            "fx-resource-function",
+            "fx-resource-local-debug",
+            "fx-resource-appstudio",
+            "fx-resource-simple-auth"
+        ]
+    },
+    "programmingLanguage": "javascript",
+    "defaultFunctionName": "getUserProfile"
+}
