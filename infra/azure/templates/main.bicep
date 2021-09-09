@@ -1,4 +1,3 @@
-// Global
 param resourceBaseName string
 param m365ClientId string
 @secure()
@@ -6,8 +5,11 @@ param m365ClientSecret string
 param m365TenantId string
 param m365OauthAuthorityHost string
 
-// Auto generated TeamsFx internal configurations. Changes to them will be overriden.
-var teamsFxGlobalConfigurations = {
+var teamsMobileOrDesktopAppClientId = '1fec8e78-bce4-4aaf-ab1b-5451cc387264'
+var teamsWebAppClientId = '5e3ce6c0-2b1f-4285-8d4b-75ee78787346'
+
+// AAD
+var teamsFxAuthenticationConfiguration = {
   m365ApplicationIdUri: 'api://${frontendHostingProvision.outputs.domain}/botid-${bot_aadClientId}'
 }
 
@@ -32,8 +34,8 @@ module simpleAuthProvision './simpleAuthProvision.bicep' = {
   params: {
     simpleAuthServerFarmsName: simpleAuth_serverFarmsName
     simpleAuthWebAppName: simpleAuth_webAppName
-    httpsOnly: true
     sku: simpleAuth_sku
+    teamsFxConfiguration: teamsFxSimpleAuthProvisionInput
   }
 }
 module simpleAuthConfiguration './simpleAuthConfiguration.bicep' = {
@@ -44,51 +46,33 @@ module simpleAuthConfiguration './simpleAuthConfiguration.bicep' = {
   params: {
     simpleAuthWebAppName: simpleAuth_webAppName
     simpelAuthPackageUri: simpleAuth_packageUri
-    teamsFxConfiguration: teamsFxSimpleAuthConfigurations
+    teamsFxConfiguration: teamsFxSimpleAuthConfigurationInput
   }
 }
 
-var teamsFxSimpleAuthConfigurationInput = {
-  m365ClientId: m365ClientId
-  m365ClientSecret: m365ClientSecret
-  m365TenantId: m365TenantId
-  m365OAuthAuthorityHost: m365OauthAuthorityHost
-  m365ApplicationIdUri: teamsFxGlobalConfigurations.m365ApplicationIdUri
-  frontendHostingEndpoitn: frontendHostingProvision.outputs.endpoint
-}
-
-// Function 
-var teamsFxFunctionProvisionInput = {
-  identityName: userAssignedIdentityProvision.outputs.identityName
+// Auto generated TeamsFx internal configurations. Changes to them will be overriden.
+var teamsFxSimpleAuthProvisionInput = {
+  webApp: {
+    identity: {}
+  }
 }
 
 // Auto generated TeamsFx internal configurations. Changes to them will be overriden.
-var teamsFxFunctionConfigurationInput = {
-  // m365ClientId: m365ClientId
-  // m365ClientSecret: m365ClientSecret
-  // m365TenantId: m365TenantId
-  // m365ApplicationIdUri: teamsFxGlobalConfigurations.m365ApplicationIdUri
-  // m365OauthAuthorityHost: m365OauthAuthorityHost
-  // frontendHostingStorageEndpoint: frontendHostingProvision.outputs.endpoint
-  // sqlDatabaseName: azureSqlProvision.outputs.databaseName
-  // sqlEndpoint: azureSqlProvision.outputs.sqlEndpoint
-  // identityId: userAssignedIdentityProvision.outputs.identityId
+var teamsFxSimpleAuthConfigurationInput = {
   appSettings: {
     properties: {
-      m365ClientId: m365ClientId
-      m365ClientSecret: m365ClientSecret
-      m365TenantId: m365TenantId
-      m365ApplicationIdUri: teamsFxGlobalConfigurations.m365ApplicationIdUri
-      m365OauthAuthorityHost: m365OauthAuthorityHost
-      frontendHostingStorageEndpoint: frontendHostingProvision.outputs.endpoint
-      sqlDatabaseName: azureSqlProvision.outputs.databaseName
-      sqlEndpoint: azureSqlProvision.outputs.sqlEndpoint
-      identityId: userAssignedIdentityProvision.outputs.identityId
+      AAD_METADATA_ADDRESS: uri(m365OauthAuthorityHost, '${m365TenantId}/v2.0/.well-known/openid-configuration')
+      ALLOWED_APP_IDS: '${teamsMobileOrDesktopAppClientId};${teamsWebAppClientId}'
+      IDENTIFIER_URI: teamsFxAuthenticationConfiguration.m365ApplicationIdUri
+      CLIENT_ID: m365ClientId
+      CLIENT_SECRET: m365ClientSecret
+      OAUTH_AUTHORITY: m365OauthAuthorityHost
+      TAB_APP_ENDPOINT: frontendHostingProvision.outputs.endpoint
     }
   }
 }
 
-
+// Function 
 param function_serverfarmsName string = '${resourceBaseName}-function-serverfarms'
 param function_webappName string = '${resourceBaseName}-function-webapp'
 param function_storageName string = 'functionstg${uniqueString(resourceBaseName)}'
@@ -114,26 +98,46 @@ module functionConfiguration './functionConfiguration.bicep' = {
   }
 }
 
+// Auto generated TeamsFx internal configurations. Changes to them will be overriden.
+var teamsFxFunctionProvisionInput = {
+  funtionApp: {
+    identity: {
+      type: 'UserAssigned'
+      userAssignedIdentities: {
+        '${userAssignedIdentityProvision.outputs.identityName}': {}
+      }
+    }
+  }
+}
+
+// Auto generated TeamsFx internal configurations. Changes to them will be overriden.
+var teamsFxFunctionConfigurationInput = {
+  appConfig: {
+    properties: {
+      cors: {
+        allowedOrigins: [
+          frontendHostingProvision.outputs.endpoint
+        ]
+      }
+    }
+  }
+  appSettings: {
+    properties: {
+      API_ENDPOINT: 'https://${functionProvision.outputs.hostName}'
+      ALLOWED_APP_IDS: '${teamsMobileOrDesktopAppClientId};${teamsWebAppClientId}'
+      M365_APPLICATION_ID_URI: teamsFxAuthenticationConfiguration.m365ApplicationIdUri
+      M365_CLIENT_ID: m365ClientId
+      M365_CLIENT_SECRET: m365ClientSecret
+      M365_TENANT_ID: m365TenantId
+      M365_AUTHORITY_HOST: m365OauthAuthorityHost
+      IDENTITY_ID: userAssignedIdentityProvision.outputs.identityName
+      SQL_DATABASE_NAME: azureSqlProvision.outputs.databaseName
+      SQL_ENDPOINT: azureSqlProvision.outputs.sqlEndpoint
+    }
+  }
+}
+
 // Bot
-var teamsFxBotProvisionInput = {
-  identityName: userAssignedIdentityProvision.outputs.identityName
-}
-
-// 
-var teamsFxBotConfigurationInput = {
-  authLoginUriSuffix: authLoginUriSuffix
-  botEndpoint: botProvision.outputs.botWebAppEndpoint
-  m365ApplicationIdUri: m365ApplicationIdUri
-  m365ClientId: m365ClientId
-  m365ClientSecret: m365ClientSecret
-  m365TenantId: m365TenantId
-  m365OauthAuthorityHost: m365OauthAuthorityHost
-  functionEndpoint: functionProvision.outputs.functionEndpoint
-  sqlDatabaseName: azureSqlProvision.outputs.databaseName
-  sqlEndpoint: azureSqlProvision.outputs.sqlEndpoint
-  identityId: userAssignedIdentityProvision.outputs.identityId
-}
-
 param bot_aadClientId string
 @secure()
 param bot_aadClientSecret string
@@ -155,6 +159,7 @@ module botProvision './botProvision.bicep' = {
     botServiceSKU: bot_serviceSKU
     botWebAppName: bot_sitesName
     botWebAppSKU: bot_webAppSKU
+    teamsFxConfiguration: teamsFxBotProvisionInput
   }
 }
 module botConfiguration './botConfiguration.bicep' = {
@@ -163,15 +168,42 @@ module botConfiguration './botConfiguration.bicep' = {
     botProvision
   ]
   params: {
-    botAadClientId: bot_aadClientId
-    botAadClientSecret: bot_aadClientSecret
     botServiceName: bot_serviceName
     botWebAppName: bot_sitesName
+    teamsFxConfiguration: teamsFxBotConfigurationInput
   }
 }
 
-output teamsFxBotOutput object = {
-  
+// Auto generated TeamsFx internal configurations. Changes to them will be overriden.
+var teamsFxBotProvisionInput = {
+  webApp: {
+    identity: {
+      type: 'UserAssigned'
+      userAssignedIdentities: {
+        '${userAssignedIdentityProvision.outputs.identityName}': {}
+      }
+    }
+  }
+}
+
+// Auto generated TeamsFx internal configurations. Changes to them will be overriden.
+var teamsFxBotConfigurationInput = {
+  webAppSettings: {
+    properties: {
+      BOT_ID: bot_aadClientId
+      BOT_PASSWORD: bot_aadClientSecret
+      INITIATE_LOGIN_ENDPOINT: uri(botProvision.outputs.botWebAppEndpoint, authLoginUriSuffix)
+      M365_APPLICATION_ID_URI: teamsFxAuthenticationConfiguration.m365ApplicationIdUri
+      M365_AUTHORITY_HOST: m365OauthAuthorityHost
+      M365_CLIENT_ID: m365ClientId
+      M365_CLIENT_SECRET: m365ClientSecret
+      M365_TENANT_ID: m365TenantId
+      API_ENDPOINT: functionProvision.outputs.functionEndpoint
+      SQL_DATABASE_NAME: azureSqlProvision.outputs.databaseName
+      SQL_ENDPOINT: azureSqlProvision.outputs.sqlEndpoint
+      IDENTITY_ID: userAssignedIdentityProvision.outputs.identityName
+    }
+  }
 }
 
 // Identity
@@ -201,11 +233,30 @@ module azureSqlProvision './azureSqlProvision.bicep' = {
   }
 }
 
-// do not modify
-output teamsFxFeOutput object = {
+// Auto generated TeamsFx internal configurations. Changes to them will be overriden.
+output teamsFxOutput object = {
+  'fx-resource-frontend-hosting': {
 
+  }
+  'fx-resource-identity': {
+
+  }
+  'fx-resource-azure-sql': {
+
+  }
+  'fx-resource-bot': {
+
+  }
+  'fx-resource-aad-app-for-teams': {
+
+  }
+  'fx-resource-function': {
+
+  }
+  'fx-resource-simple-auth': {
+    
+  }
 }
-
 
 output frontendHosting_storageName string = frontendHostingProvision.outputs.storageName
 output frontendHosting_endpoint string = frontendHostingProvision.outputs.endpoint

@@ -1,6 +1,7 @@
 param sku string
 param simpleAuthServerFarmsName string
 param simpleAuthWebAppName string
+param teamsFxConfiguration object
 
 resource simpleAuthServerFarms 'Microsoft.Web/serverfarms@2020-06-01' = {
   name: simpleAuthServerFarmsName
@@ -27,6 +28,7 @@ resource simpleAuthWebApp 'Microsoft.Web/sites@2020-06-01' = {
       numberOfWorkers: 1
     }
   }
+  identity: empty(teamsFxConfiguration.webApp.identity)? null : teamsFxConfiguration.webApp.identity
 }
 
 output webAppName string = simpleAuthWebAppName

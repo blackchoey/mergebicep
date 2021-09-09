@@ -5,7 +5,6 @@ param botServerfarmsName string
 param botWebAppSKU string = 'F1'
 param botServiceSKU string = 'F1'
 param botWebAppName string
-param identityName string
 @secure()
 param teamsFxConfiguration object
 
@@ -22,7 +21,7 @@ resource botServices 'Microsoft.BotService/botServices@2021-03-01' = {
     msaAppId: botAadClientId
   }
   sku: {
-    name: botServiceSKU
+    name: botServiceSKU 
   }
 }
 
@@ -51,12 +50,7 @@ resource botWebApp 'Microsoft.Web/sites@2021-01-01' = {
       numberOfWorkers: 1
     }
   }
-  identity: {
-    type: 'UserAssigned'
-    userAssignedIdentities: {
-      '${identityName}': {}
-    }
-  }
+  identity: empty(teamsFxConfiguration.webApp.identity) ? null : teamsFxConfiguration.webApp.identity
 }
 
 output botWebAppSKU string = botWebAppSKU

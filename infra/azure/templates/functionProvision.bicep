@@ -13,10 +13,6 @@ resource functionServerfarms 'Microsoft.Web/serverfarms@2020-06-01' = {
   }
 }
 
-var a = json(loadTextContent('./funcConfig.json'))
-
-resource functionApp2 'Microsoft.Web/sites@2020-06-01' = a
-
 resource functionApp 'Microsoft.Web/sites@2020-06-01' = {
   name: functionAppName
   kind: 'functionapp'
@@ -24,13 +20,13 @@ resource functionApp 'Microsoft.Web/sites@2020-06-01' = {
   properties: {
     serverFarmId: functionServerfarms.id
   }
+  identity: teamsFxConfiguration.functionApp.identity
   // identity: {
   //   type: 'UserAssigned'
   //   userAssignedIdentities: {
   //     '${identityName}':{}
   //   }
   // }
-  identity: teamsFxConfiguration.identity
 }
 
 resource functionStorage 'Microsoft.Storage/storageAccounts@2021-04-01' = {
@@ -50,3 +46,4 @@ output appServicePlanName string = functionServerfarms.name
 output functionEndpoint string = functionApp.properties.hostNames[0]
 output storageAccountName string = functionStorage.name
 output appName string = functionAppName
+output hostName string = functionApp.properties.hostNames[0]
