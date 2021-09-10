@@ -24,7 +24,7 @@ module frontendHostingProvision './frontendHostingProvision.bicep' = {
 }
 
 // Simple auth
-param simpleAuth_sku string = 'F1'
+param simpleAuth_sku string = 'B1'
 param simpleAuth_serverFarmsName string = '${resourceBaseName}-simpleAuth-serverfarms'
 param simpleAuth_webAppName string = '${resourceBaseName}-simpleAuth-webapp'
 param simpleAuth_packageUri string = 'https://github.com/OfficeDev/TeamsFx/releases/download/simpleauth@0.1.0/Microsoft.TeamsFx.SimpleAuth_0.1.0.zip'
@@ -53,7 +53,12 @@ module simpleAuthConfiguration './simpleAuthConfiguration.bicep' = {
 // Auto generated TeamsFx internal configurations. Changes to them will be overriden.
 var teamsFxSimpleAuthProvisionInput = {
   webApp: {
-    identity: {}
+    identity: {
+      type: 'UserAssigned'
+      userAssignedIdentities: {
+        '${userAssignedIdentityProvision.outputs.identityName}': {}
+      }
+    }
   }
 }
 
@@ -100,7 +105,7 @@ module functionConfiguration './functionConfiguration.bicep' = {
 
 // Auto generated TeamsFx internal configurations. Changes to them will be overriden.
 var teamsFxFunctionProvisionInput = {
-  funtionApp: {
+  functionApp: {
     identity: {
       type: 'UserAssigned'
       userAssignedIdentities: {
@@ -135,6 +140,18 @@ var teamsFxFunctionConfigurationInput = {
       SQL_ENDPOINT: azureSqlProvision.outputs.sqlEndpoint
     }
   }
+  authSettings: {
+    properties: {
+      enabled: true
+      defaultProvider: 'AzureActiveDirectory'
+      clientId: m365ClientId
+      issuer: '${m365OauthAuthorityHost}/${m365TenantId}/v2.0'
+      allowedAudiences: [
+        m365ClientId
+        teamsFxAuthenticationConfiguration.m365ApplicationIdUri
+      ]
+    }
+  }
 }
 
 // Bot
@@ -144,7 +161,7 @@ param bot_aadClientSecret string
 param bot_serviceName string = '${resourceBaseName}-bot-service'
 param bot_displayName string = '${resourceBaseName}-bot-displayname'
 param bot_serverfarmsName string = '${resourceBaseName}-bot-serverfarms'
-param bot_webAppSKU string = 'F1'
+param bot_webAppSKU string = 'B1'
 param bot_serviceSKU string = 'F1'
 param bot_sitesName string = '${resourceBaseName}-bot-sites'
 param authLoginUriSuffix string = 'auth-start.html'
@@ -236,25 +253,41 @@ module azureSqlProvision './azureSqlProvision.bicep' = {
 // Auto generated TeamsFx internal configurations. Changes to them will be overriden.
 output teamsFxOutput object = {
   'fx-resource-frontend-hosting': {
-
+    storageName: frontendHostingProvision.outputs.storageName
+    endpoint: frontendHostingProvision.outputs.endpoint
+    domain: frontendHostingProvision.outputs.domain
   }
   'fx-resource-identity': {
-
+    identityName: userAssignedIdentityProvision.outputs.identityName
+    identityId: userAssignedIdentityProvision.outputs.identityId
+    identity: userAssignedIdentityProvision.outputs.identity
   }
   'fx-resource-azure-sql': {
-
+    sqlEndpoint: azureSqlProvision.outputs.sqlEndpoint
+    databaseName: azureSqlProvision.outputs.databaseName
   }
   'fx-resource-bot': {
-
+    validDomain: botProvision.outputs.botDomain
+    appServicePlan: botProvision.outputs.appServicePlanName
+    botChannelReg: botProvision.outputs.botServiceName
+    siteName: botProvision.outputs.botServiceName
+    siteEndpoint: botProvision.outputs.botWebAppEndpoint
+    skuName: botProvision.outputs.botWebAppSKU
   }
   'fx-resource-aad-app-for-teams': {
-
+    applicationIdUris: teamsFxAuthenticationConfiguration.m365ApplicationIdUri
   }
   'fx-resource-function': {
-
+    functionAppName: functionProvision.outputs.appName
+    storageAccountName: functionProvision.outputs.storageAccountName
+    appServicePlanName: functionProvision.outputs.appServicePlanName
+    functionEndpoint: functionProvision.outputs.functionEndpoint
   }
   'fx-resource-simple-auth': {
-    
+    endpoint: simpleAuthProvision.outputs.endpoint
+    skuName: simpleAuthProvision.outputs.skuName
+    webAppName: simpleAuthProvision.outputs.webAppName
+    appServicePlanName: simpleAuthProvision.outputs.appServicePlanName
   }
 }
 
